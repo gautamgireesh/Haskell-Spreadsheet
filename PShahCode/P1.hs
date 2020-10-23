@@ -39,6 +39,12 @@ evalDeer (Builtin "=" params) env = VBool (getNum(evalDeer (params !! 0) env) ==
 evalDeer (Builtin ">=" params) env = VBool (getNum(evalDeer (params !! 0) env) >= getNum(evalDeer (params !! 1) env))
 evalDeer (Builtin "++" params) env =  VStr (getString(evalDeer (params !! 0) env) ++ getString(evalDeer (params !! 1) env))
 evalDeer (Lambda function expr) env = VClosure function expr env
+evalDeer (Apply function expr) env = 
+  let func = evalDeer function env
+      evaluatedArgs = foldl (\x y -> x ++ [evalDeer y env]) [] expr
+      new_env = parseParameters func evaluatedArgs
+  in
+      getFunctionValue func new_env
 
 -- ...
 
@@ -58,6 +64,22 @@ computeSpreadsheet (Spreadsheet defs columns) = []
 getNum (VNum num) = num
 
 getString(VStr str) = str
+
+getExpr(VClosure func expr env) = expr
+getEnv(VClosure func expr env) = env
+
+parseParameters (VClosure params expr env ) args =
+    let tuples = zip params args 
+    in
+      foldl (\x y -> Data.Map.insert (fst y) (snd y) x) env tuples
+
+getFunctionValue(VClosure params expr env) new_env=
+  evalDeer expr new_env 
+
+
+    
+  
+
 
 isError (Error) = True
 isError _ = False

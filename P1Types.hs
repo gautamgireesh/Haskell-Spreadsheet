@@ -14,7 +14,7 @@ where
 
 -- An environment is a mapping of a string identifier to a value
 import Data.Map
-type Env =  Map String Value
+type Env =  MLaap String Value
 
 -- A spreadsheet consists of a list of definitions and a list
 -- of columns
