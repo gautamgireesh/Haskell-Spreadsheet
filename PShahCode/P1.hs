@@ -103,8 +103,7 @@ checkNum _ = False
 checkStr (VStr c) = True
 checkStr _ = False
 
--- computeSpreadsheet :: Spreadsheet -> [Column]
-<<<<<<< HEAD
+computeSpreadsheet :: Spreadsheet -> [Column]
 computeSpreadsheet (Spreadsheet defs columns) =
   let new_map = Data.Map.empty
       defEnv = foldl(\x y -> Data.Map.insert (parseDefString(y)) (evalDeer (parseDefExpr(y)) x) x) new_map defs
@@ -114,17 +113,6 @@ computeSpreadsheet (Spreadsheet defs columns) =
       output = []
   in
     foldl (\x y -> x ++ [doColumn y globalEnv] )output columns 
-=======
--- computeSpreadsheet (Spreadsheet defs columns) =
---   let new_map = Data.Map.empty
---       defEnv = foldl(\x y -> Data.Map.insert (parseDefString(y)) (evalDeer (parseDefExpr(y)) x) x) new_map defs
---       valueCol = filter (parseColumns) columns
---       colEnv = buildDataEnvs valueCol Data.Map.empty
---       globalEnv = combineEnv defEnv colEnv
---   in
---     foldl (\x y -> x ++ doColumn y defEnv colEnv ) output columns
---     output 
->>>>>>> 9e05b4e6670ea4da9f1a83a4f16108e605b4042b
     
 
 -------------------------------------------------------------------------------
