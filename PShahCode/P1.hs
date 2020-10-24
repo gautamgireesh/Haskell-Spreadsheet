@@ -17,7 +17,7 @@ import P1Types(Spreadsheet(..), Definition(..), Column(..),
                Expr(..), Value(..),
                Env, exampleSpreadsheet)
 import Prelude hiding (lookup)
-import qualified Data.Map (lookup, insert, empty)
+import qualified Data.Map (lookup, insert, empty, union)
 
 -------------------------------------------------------------------------------
 -- Main Functions: 
@@ -48,13 +48,17 @@ evalDeer (Apply function expr) env =
 
 -- ...
 
-computeSpreadsheet :: Spreadsheet -> [Column]
-computeSpreadsheet (Spreadsheet defs columns) = []
---  let defEnv    = ...build an environment with the definitions...
---      valueCols = ...just the value columns...
---      dataEnvs  = ...list of environment, one for each spreadsheet row...
---      ...
---  in ...
+-- computeSpreadsheet :: Spreadsheet -> [Column]
+computeSpreadsheet (Spreadsheet defs columns) =
+  let new_map = Data.Map.empty
+      defEnv = foldl(\x y -> Data.Map.insert (parseDefString(y)) (evalDeer (parseDefExpr(y)) x) x) new_map defs
+      valueCol = filter (parseColumns) columns
+      colEnv = buildDataEnvs valueCol Data.Map.empty
+      globalEnv = combineEnv defEnv colEnv
+  in
+    -- foldl (\x y -> x ++ doColumn y defEnv colEnv )output columns
+    -- output 
+    globalEnv
 
 
 -------------------------------------------------------------------------------
@@ -75,27 +79,78 @@ parseParameters (VClosure params expr env ) args =
 
 getFunctionValue(VClosure params expr env) new_env=
   evalDeer expr new_env 
-
-
-    
   
 
+parseDefString(Def str exp) = str
+
+parseDefExpr(Def str exp) = exp
 
 isError (Error) = True
 isError _ = False
 
+parseColumns(ValCol id expr)  = True
+parseColumns(ComputedCol id expr) = False
+
+combineEnv sheetEnv columnEnv =
+  let big_sheetEnv = take (length columnEnv) (repeat sheetEnv)
+      combined = zip big_sheetEnv columnEnv
+  in
+    foldl (\x y -> x ++ Data.Map.union (fst y) (snd y)) [] zip combined
+
+-- doColumn(ValCol id expr) env = ValCol id expr
+-- doColumn(ComputedCol id expr) sheetEnv colEnv =
+  
+
 
 
 -- Return an environment with the appropriate identifier-to-value bindings.
-getEnvironment:: Definition -> Env
-getEnvironment def = undefined
+-- getEnvironment:: Definition -> Env
+-- getEnvironment def = Error
 
 -- Return a list of environments, one corresponding to each row in the data.
 -- Each environment consists of bindings from the value columns, along with
 -- the environment.
 
-buildDataEnvs :: [Column] -> Env -> [Env]
-buildDataEnvs columns env = undefined
+-- buildDataEnvs :: [Column] -> Env -> 
+
+buildDataEnvs columns env = 
+  let env_list = buildRowEnviroment (columns !! 0) 
+      final_list = []
+  in 
+    buildColumnHelper  columns env_list 1
+
+
+buildColumnHelper columns starting_list count  =
+  if count == length columns -1
+    then
+      let
+          new_concat_list = buildRowHelper (columns !! count) starting_list 0
+      in
+        new_concat_list
+    else 
+      let new_concat_list = buildRowHelper (columns !! count) starting_list 0 
+      in
+          buildColumnHelper  columns new_concat_list (count + 1)
+  
+buildRowEnviroment(ValCol id expr)  =  
+  let new = []
+  in
+    Prelude.foldl (\x y -> x ++ [Data.Map.insert id y Data.Map.empty]) new expr 
+      
+
+buildRowHelper (ValCol id expr) env_list count =
+
+  if (length expr == 1)
+    then 
+      [Data.Map.insert id (expr !! 0) (env_list !! (count))]
+    else 
+      [Data.Map.insert id (expr !! 0) (env_list !! count)] ++ buildRowHelper(ValCol id (tail expr)) env_list (count + 1)
+     
+
+
+
+  
+
 
 
 -------------------------------------------------------------------------------
