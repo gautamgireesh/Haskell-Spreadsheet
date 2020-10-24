@@ -56,9 +56,9 @@ computeSpreadsheet (Spreadsheet defs columns) =
       colEnv = buildDataEnvs valueCol Data.Map.empty
       globalEnv = combineEnv defEnv colEnv
   in
-    -- foldl (\x y -> x ++ doColumn y defEnv colEnv )output columns
-    -- output 
-    globalEnv
+    foldl (\x y -> x ++ doColumn y defEnv colEnv )output columns
+    output 
+    
 
 
 -------------------------------------------------------------------------------
@@ -95,7 +95,7 @@ combineEnv sheetEnv columnEnv =
   let big_sheetEnv = take (length columnEnv) (repeat sheetEnv)
       combined = zip big_sheetEnv columnEnv
   in
-    foldl (\x y -> x ++ Data.Map.union (fst y) (snd y)) [] zip combined
+    foldl (\x y -> x ++ [Data.Map.union (fst y) (snd y)]) [] combined
 
 -- doColumn(ValCol id expr) env = ValCol id expr
 -- doColumn(ComputedCol id expr) sheetEnv colEnv =

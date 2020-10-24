@@ -1,0 +1,6 @@
+ [ValCol "id" [VNum 1, VNum 2, VNum 3, VNum 4, VNum 5],ValCol "name" [VStr "adam", VStr "betty",VStr "clare",VStr "eric", VStr "sam"],ValCol "age" [VNum 12, VNum 15, VNum 18, VNum 49, VNum 17]
+
+
+
+
+Def "divide" (Lambda ["a", "b"](Builtin "/" [Id "a", Id "b"]))
