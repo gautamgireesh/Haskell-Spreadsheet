@@ -55,9 +55,9 @@ computeSpreadsheet (Spreadsheet defs columns) =
       valueCol = filter (parseColumns) columns
       colEnv = buildDataEnvs valueCol Data.Map.empty
       globalEnv = combineEnv defEnv colEnv
+      output = []
   in
-    foldl (\x y -> x ++ doColumn y defEnv colEnv )output columns
-    output 
+    foldl (\x y -> x ++ [doColumn y globalEnv] )output columns 
     
 
 
@@ -97,10 +97,17 @@ combineEnv sheetEnv columnEnv =
   in
     foldl (\x y -> x ++ [Data.Map.union (fst y) (snd y)]) [] combined
 
--- doColumn(ValCol id expr) env = ValCol id expr
--- doColumn(ComputedCol id expr) sheetEnv colEnv =
-  
+doColumn(ValCol id expr) env = ValCol id expr
+doColumn(ComputedCol id expr) env =
+  let 
+      lists = foldl (\x y -> x ++  [evalDeer expr y]) [] env
+      in
 
+        ValCol id lists
+
+-- getFunctionId(Apply func_id expr) = func_id
+
+-- getParamId(Apply func_id expr) = expr
 
 
 -- Return an environment with the appropriate identifier-to-value bindings.
