@@ -29,16 +29,67 @@ evalDeer :: Expr -> Env -> Value
 evalDeer (Id id) env = case (Data.Map.lookup id env) of
                            Just value -> value
                            Nothing    -> Error 
+
 evalDeer (Literal v) env = v
-evalDeer (Builtin "+" params) env =  VNum (getNum(evalDeer (params !! 0) env) + getNum(evalDeer (params !! 1) env))
-evalDeer (Builtin "-" params) env =  VNum (getNum(evalDeer (params !! 0) env) - getNum(evalDeer (params !! 1) env))
-evalDeer (Builtin "*" params) env = VNum (getNum(evalDeer (params !! 0) env) * getNum(evalDeer (params !! 1) env))
-evalDeer (Builtin "/" params) env =  VNum (getNum(evalDeer (params !! 0) env) / getNum(evalDeer (params !! 1) env))
-evalDeer (Builtin ">" params) env = VBool (getNum(evalDeer (params !! 0) env) > getNum(evalDeer (params !! 1) env))
-evalDeer (Builtin "=" params) env = VBool (getNum(evalDeer (params !! 0) env) == getNum(evalDeer (params !! 1) env))
-evalDeer (Builtin ">=" params) env = VBool (getNum(evalDeer (params !! 0) env) >= getNum(evalDeer (params !! 1) env))
-evalDeer (Builtin "++" params) env =  VStr (getString(evalDeer (params !! 0) env) ++ getString(evalDeer (params !! 1) env))
+
+evalDeer (Builtin "+" params) env =  
+  if checkNum (evalDeer (params !! 0) env) && checkNum (evalDeer (params !! 1) env) && length params == 2
+    then
+      VNum (getNum(evalDeer (params !! 0) env) + getNum(evalDeer (params !! 1) env))
+    else
+      Error
+
+evalDeer (Builtin "-" params) env =  
+  if checkNum (evalDeer (params !! 0) env) && checkNum (evalDeer (params !! 1) env) && length params == 2
+    then
+      VNum (getNum(evalDeer (params !! 0) env) - getNum(evalDeer (params !! 1) env))
+    else
+      Error
+
+evalDeer (Builtin "*" params) env = 
+  if checkNum (evalDeer (params !! 0) env) && checkNum (evalDeer (params !! 1) env) && length params == 2
+    then
+      VNum (getNum(evalDeer (params !! 0) env) * getNum(evalDeer (params !! 1) env))
+    else 
+      Error
+
+evalDeer (Builtin "/" params) env =  
+  if getNum(evalDeer (params !! 1) env) == 0 || not (length params == 2)
+    then 
+      Error
+    else
+      VNum (getNum(evalDeer (params !! 0) env) / getNum(evalDeer (params !! 1) env))
+
+evalDeer (Builtin ">" params) env = 
+  if checkNum (evalDeer (params !! 0) env) && checkNum (evalDeer (params !! 1) env) && length params == 2
+    then
+      VBool (getNum(evalDeer (params !! 0) env) > getNum(evalDeer (params !! 1) env))
+    else
+      Error
+
+evalDeer (Builtin "=" params) env = 
+  if checkNum (evalDeer (params !! 0) env) && checkNum (evalDeer (params !! 1) env) && length params == 2
+    then
+      VBool (getNum(evalDeer (params !! 0) env) == getNum(evalDeer (params !! 1) env))
+    else
+      Error
+
+evalDeer (Builtin ">=" params) env = 
+  if checkNum (evalDeer (params !! 0) env) && checkNum (evalDeer (params !! 1) env) && length params == 2
+    then
+      VBool (getNum(evalDeer (params !! 0) env) >= getNum(evalDeer (params !! 1) env))
+    else
+      Error
+
+evalDeer (Builtin "++" params) env =  
+  if checkStr (evalDeer (params !! 0) env) && checkStr (evalDeer (params !! 1) env) && length params == 2
+    then
+      VStr (getString(evalDeer (params !! 0) env) ++ getString(evalDeer (params !! 1) env))
+    else
+      Error
+
 evalDeer (Lambda function expr) env = VClosure function expr env
+
 evalDeer (Apply function expr) env = 
   let func = evalDeer function env
       evaluatedArgs = foldl (\x y -> x ++ [evalDeer y env]) [] expr
@@ -46,30 +97,34 @@ evalDeer (Apply function expr) env =
   in
       getFunctionValue func new_env
 
--- ...
+checkNum (VNum num) = True
+checkNum _ = False
+
+checkStr (VStr c) = True
+checkStr _ = False
 
 -- computeSpreadsheet :: Spreadsheet -> [Column]
-computeSpreadsheet (Spreadsheet defs columns) =
-  let new_map = Data.Map.empty
-      defEnv = foldl(\x y -> Data.Map.insert (parseDefString(y)) (evalDeer (parseDefExpr(y)) x) x) new_map defs
-      valueCol = filter (parseColumns) columns
-      colEnv = buildDataEnvs valueCol Data.Map.empty
-      globalEnv = combineEnv defEnv colEnv
-  in
-    foldl (\x y -> x ++ doColumn y defEnv colEnv )output columns
-    output 
+-- computeSpreadsheet (Spreadsheet defs columns) =
+--   let new_map = Data.Map.empty
+--       defEnv = foldl(\x y -> Data.Map.insert (parseDefString(y)) (evalDeer (parseDefExpr(y)) x) x) new_map defs
+--       valueCol = filter (parseColumns) columns
+--       colEnv = buildDataEnvs valueCol Data.Map.empty
+--       globalEnv = combineEnv defEnv colEnv
+--   in
+--     foldl (\x y -> x ++ doColumn y defEnv colEnv ) output columns
+--     output 
     
-
 
 -------------------------------------------------------------------------------
 -- Helper Functions
 -- | You may add, remove, or modify any helper functions here.
 -------------------------------------------------------------------------------
-getNum (VNum num) = num
+getNum(VNum num) = num
 
 getString(VStr str) = str
 
 getExpr(VClosure func expr env) = expr
+
 getEnv(VClosure func expr env) = env
 
 parseParameters (VClosure params expr env ) args =
@@ -86,7 +141,6 @@ parseDefString(Def str exp) = str
 parseDefExpr(Def str exp) = exp
 
 isError (Error) = True
-isError _ = False
 
 parseColumns(ValCol id expr)  = True
 parseColumns(ComputedCol id expr) = False
@@ -136,7 +190,7 @@ buildRowEnviroment(ValCol id expr)  =
   let new = []
   in
     Prelude.foldl (\x y -> x ++ [Data.Map.insert id y Data.Map.empty]) new expr 
-      
+
 
 buildRowHelper (ValCol id expr) env_list count =
 
@@ -146,12 +200,6 @@ buildRowHelper (ValCol id expr) env_list count =
     else 
       [Data.Map.insert id (expr !! 0) (env_list !! count)] ++ buildRowHelper(ValCol id (tail expr)) env_list (count + 1)
      
-
-
-
-  
-
-
 
 -------------------------------------------------------------------------------
 -- The example from the handout
